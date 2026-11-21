@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <meta content="web_auth" name="shell-type" />
+  <title>Sign In - SecureVault</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+  <style>
+    @layer base {
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        overscroll-behavior: none;
+      }
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#01345d",
+            "primary-container": "#234b75",
+            "on-primary": "#ffffff",
+            "secondary": "#145fab",
+            "secondary-container": "#73adff",
+            "surface": "#f8f9ff",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e5eeff",
+            "surface-container-high": "#dce9ff",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#42474e",
+            "outline": "#73777f",
+            "outline-variant": "#c3c6d0",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a"
+          },
+          fontFamily: {
+            "body-md": ["Inter"],
+            "headline-xl": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-md": ["Inter"],
+            "label-sm": ["Inter"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-md w-full bg-surface-container-lowest rounded-2xl shadow-xl border border-[#E8EDF3] p-8">
+
+    <!-- Header Branding -->
+    <div class="flex flex-col items-center text-center mb-6">
+      <div class="flex items-center gap-2 mb-2">
+        <img alt="SecureVault Logo" class="h-10 w-auto object-contain"
+          src="https://lh3.googleusercontent.com/aida/ALJJyrBmeN1jd9c6w6YFeMXVXxGOkYykdc3XyIf6S2WefS0q4jW7h4v5AiizyrTyZ37wzXnXuXhgNPUyqQ5qYem8qi9RJ1xwrWVTlpfMJO0QFTUJySLxR6jq-a513zNJ4HhOQX8-aKW0CNv_eoPvpLyfhpxvyUVwqviOF4cYWVU4iveWzTgfIktkeLoerJjQMPAECAf82FVWFrQunSlMj0zUsDIsudpPrKFDnGdkTHgQbM2d" />
+        <span class="text-2xl font-bold text-primary tracking-tight">SecureVault</span>
+      </div>
+      <p class="text-xs uppercase tracking-wider font-semibold text-secondary">Cryptographic Access Gateway</p>
+    </div>
+
+    <!-- Flash Notification Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-5 space-y-2">
+      {% for category, message in messages %}
+      <div
+        class="p-3 rounded-lg text-sm flex items-start gap-2.5 {% if category == 'error' %}bg-error-container text-on-error-container{% elif category == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-surface-container-high text-primary{% endif %}">
+        <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">
+          {% if category == 'error' %}error{% elif category == 'success' %}check_circle{% else %}info{% endif %}
+        </span>
+        <span class="flex-1 font-medium">{{ message }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Auth Tabs -->
+    <div class="flex rounded-lg bg-surface-container-low p-1 mb-6">
+      <a href="{{ url_for('auth.login', tab='login') }}"
+        class="flex-1 text-center py-2 rounded-md text-sm font-semibold transition-all {% if active_tab != 'register' %}bg-surface-container-lowest text-primary shadow-sm{% else %}text-on-surface-variant hover:text-primary{% endif %}">
+        Sign In
+      </a>
+      <a href="{{ url_for('auth.register') }}"
+        class="flex-1 text-center py-2 rounded-md text-sm font-semibold transition-all {% if active_tab == 'register' %}bg-surface-container-lowest text-primary shadow-sm{% else %}text-on-surface-variant hover:text-primary{% endif %}">
+        Register
+      </a>
+    </div>
+
+    {% if active_tab == 'register' %}
+    <!-- Registration Form -->
+    <form method="POST" action="{{ url_for('auth.register') }}" class="space-y-4" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Full Name -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1"
+          for="full_name">
+          Full Name
+        </label>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">badge</span>
+          <input type="text" id="full_name" name="full_name" value="{{ form.full_name.data or '' }}" required
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="e.g. John Doe" />
+        </div>
+        {% if form.full_name.errors %}
+        <p class="text-xs text-error mt-1">{{ form.full_name.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Username -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1" for="username">
+          Username
+        </label>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">person</span>
+          <input type="text" id="username" name="username" value="{{ form.username.data or '' }}" required
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="e.g. jdoe24" />
+        </div>
+        {% if form.username.errors %}
+        <p class="text-xs text-error mt-1">{{ form.username.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1" for="email">
+          Email Address
+        </label>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">mail</span>
+          <input type="email" id="email" name="email" value="{{ form.email.data or '' }}" required
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="user@university.edu" />
+        </div>
+        {% if form.email.errors %}
+        <p class="text-xs text-error mt-1">{{ form.email.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1" for="password">
+          Password
+        </label>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">lock</span>
+          <input type="password" id="password" name="password" required
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="••••••••••••" />
+        </div>
+        <p class="text-[11px] text-outline mt-1">Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special symbol</p>
+        {% if form.password.errors %}
+        <p class="text-xs text-error mt-1">{{ form.password.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Confirm Password -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1"
+          for="confirm_password">
+          Confirm Password
+        </label>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">lock_clock</span>
+          <input type="password" id="confirm_password" name="confirm_password" required
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="••••••••••••" />
+        </div>
+        {% if form.confirm_password.errors %}
+        <p class="text-xs text-error mt-1">{{ form.confirm_password.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <button type="submit"
+        class="w-full h-11 mt-2 rounded-lg bg-primary-container text-on-primary font-semibold text-sm hover:bg-primary transition-colors shadow-sm flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+        <span>Create Secure Account</span>
+      </button>
+    </form>
+
+    {% else %}
+    <!-- Login Form -->
+    <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next', '')) }}" class="space-y-4"
+      novalidate>
+      {% if form %}
+      {{ form.hidden_tag() }}
+      {% else %}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+
+      <!-- Email -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1" for="email">
+          Email Address
+        </label>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">mail</span>
+          <input type="email" id="email" name="email" value="{{ (form.email.data or '') if form and form.email else '' }}"
+            required autofocus
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="name@university.edu" />
+        </div>
+        {% if form and form.email.errors %}
+        <p class="text-xs text-error mt-1">{{ form.email.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant" for="password">
+            Password
+          </label>
+        </div>
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">lock</span>
+          <input type="password" id="password" name="password" required
+            class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low border border-[#E8EDF3] text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:bg-surface-container-lowest transition-all"
+            placeholder="••••••••••••" />
+        </div>
+        {% if form and form.password.errors %}
+        <p class="text-xs text-error mt-1">{{ form.password.errors[0] }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Remember Me Checkbox -->
+      <div class="flex items-center justify-between pt-1">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" name="remember_me"
+            class="rounded border-outline text-secondary focus:ring-secondary w-4 h-4" />
+          <span class="text-xs text-on-surface-variant">Remember me on this machine</span>
+        </label>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit"
+        class="w-full h-11 mt-2 rounded-lg bg-primary-container text-on-primary font-semibold text-sm hover:bg-primary transition-colors shadow-sm flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">login</span>
+        <span>Authenticate to Vault</span>
+      </button>
+    </form>
+    {% endif %}
+
+    <!-- Security Assurance Banner -->
+    <div class="mt-6 pt-5 border-t border-[#E8EDF3] flex items-center justify-center gap-2 text-outline text-xs">
+      <span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span>
+      <span>Rate-limited · PBKDF2 / Scrypt Hashed · CSRF Protected</span>
+    </div>
+
+  </div>
+</body>
+
+</html>

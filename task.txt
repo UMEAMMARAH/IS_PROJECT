@@ -1,0 +1,195 @@
+MEMBER 1 — Authentication & User Management
+Backend
+
+Responsible for users, login and permissions
+
+Tasks:
+1. Develop registration and login.
+2. Implement password hashing.
+3. Implement logout and secure sessions.
+4. Create user roles (Admin, User).
+5. Implement authorization checks.
+6. Prevent users from accessing other users' documents.
+7. Create admin user-management functionality.
+Pages to develop:
+- Register
+- Login
+- User dashboard
+- Admin user management
+Security concepts to research:
+- Authentication
+- Authorization
+- RBAC
+- DAC
+- Least privilege
+- Session security
+Deliverables:
+- Authentication module
+- User database tables
+- Role and permission system
+- Authentication and authorization test cases
+
+
+MEMBER 2 — Document Management & Cryptography
+Core application
+
+Responsible for uploading, encryption and sharing
+
+Tasks:
+1. Develop document upload.
+2. Encrypt documents using AES-256-GCM.
+3. Store encrypted files separately from the database.
+4. Implement document viewing and downloading.
+5. Implement document deletion.
+6. Implement document integrity verification.
+7. Develop document sharing with Viewer and Editor permissions.
+8. Implement permission revocation.
+Pages to develop:
+- My Documents
+- Upload Document
+- Document Details
+- Shared Documents
+- Manage Permissions
+Security concepts to research:
+- AES-256-GCM
+- Symmetric encryption
+- Authenticated encryption
+- SHA-256
+- Key management
+- Data at rest
+- Secure sharing
+Deliverables:
+- Document management module
+- Encryption/decryption module
+- Sharing and revocation functionality
+- Cryptographic test cases
+
+
+MEMBER 3 — Audit Logging, Security Testing & Integration
+Security
+
+Responsible for tracking activities and demonstrating attacks
+
+Tasks:
+1. Develop audit logging.
+2. Record login and logout activities.
+3. Record uploads, downloads and deletions.
+4. Record sharing and permission revocation.
+5. Protect audit logs using HMAC-SHA256.
+6. Develop the audit-log dashboard.
+7. Test unauthorized access.
+8. Test ID manipulation (IDOR).
+9. Test document modification.
+10. Test privilege misuse and audit tampering.
+11. Integrate modules and prepare demonstration evidence.
+Pages to develop:
+- Audit Logs
+- Security Activity Dashboard
+- Security Test Results
+Security concepts to research:
+- Audit trails
+- Accountability
+- HMAC
+- IDOR
+- Tampering
+- Threat modeling
+Deliverables:
+- Audit logging module
+- Security testing report
+- Screenshots and test evidence
+- Integration support
+
+
+
+
+----------------
+done tasks :
+Module 1: Registration
+Your task
+
+Users should be able to create accounts.
+
+Your registration form will have:
+- Full name
+- Username
+- Email
+- Password
+- Confirm password
+When someone registers:
+1. Validate all fields.
+2. Check whether the email or username already exists.
+3. Validate password requirements.
+4. Hash the password.
+5. Save user information in SQLite.
+6. Return a successful registration message.
+Example: Ammara creates an account with email ammara@example.com. Her password is stored as a secure hash, not as plain text.
+
+Module 2: Login and Logout
+
+Users should be able to access their accounts.
+
+Login form:
+- Email
+- Password
+- Login button
+When a user logs in:
+1. Find the user by email.
+2. Verify the entered password against the stored hash.
+3. Check whether the account is active.
+4. Create a secure session.
+5. Redirect the user to the appropriate dashboard.
+When a user logs out:
+- Destroy their session.
+- Redirect them to the login page.
+
+Module 3: Password Security
+
+This is particularly important because this is an Information Security project.
+
+You must implement:
+- Password hashing using Argon2 or Werkzeug's password hashing.
+- Password strength validation.
+- Secure session cookies.
+- Login attempt protection.
+- Password change functionality.
+Never store actual passwords in your database.
+
+Module 4: Role-Based Access Control (RBAC)
+
+Your application will have two main account roles:
+Role	Responsibilities
+Admin	Manage users, roles and account status
+User	Manage personal account and documents
+
+Member 2 will implement document-level permissions (Owner, Editor and Viewer). You will coordinate with them so that the logged-in identity is used in every document permission check.
+
+For example:
+- Normal user tries to access /admin/users.
+- Flask checks their role.
+- Their role is User, not Admin.
+- Server returns 403 Forbidden.
+
+Module 5: Admin User Management
+
+Create an admin panel where the administrator can:
+- View registered users.
+- Search users.
+- View user details.
+- Change user roles.
+- Activate or deactivate accounts.
+- View account status.
+Important: Admin access to user management does not mean automatic access to confidential documents.
+
+Module 6: Authorization and Session Protection
+
+You must ensure that:
+- Logged-out users cannot access protected pages.
+- Normal users cannot access admin routes.
+- Inactive users cannot log in.
+- Users cannot impersonate another user by changing an ID in a request.
+- Sessions are invalidated on logout.
+- Every protected backend route checks authorization.
+
+This is where you implement the actual security, not just frontend restrictions.
+
+

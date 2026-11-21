@@ -1,0 +1,44 @@
+# Python environments
+venv/
+venv/
+.venv/
+
+IS_Project/venv/
+IS_Project/.venv/
+# Environment secrets
+.env
+.env.*
+!*.env.example
+IS_Project/.env
+IS_Project/.env.*
+@'
+# Python environments
+venv/
+.venv/
+IS_Project/venv/
+IS_Project/.venv/
+
+# Environment secrets
+.env
+.env.*
+!*.env.example
+IS_Project/.env
+IS_Project/.env.*
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Runtime database and uploaded files
+IS_Project/database/*.db
+IS_Project/database/*.db-*
+IS_Project/database/*.log
+IS_Project/instance/
+IS_Project/uploads/
+
+# IDE and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
