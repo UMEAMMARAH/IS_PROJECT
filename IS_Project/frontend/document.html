@@ -133,51 +133,66 @@
     <main class="w-full pt-16 bg-surface min-h-screen">
       <div class="max-w-7xl mx-auto p-margin">
         <div class="flex flex-col w-full">
+          <!-- Flash Messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="mb-space-md space-y-2">
+            {% for category, message in messages %}
+            <div
+              class="p-3.5 rounded-xl text-sm flex items-start gap-2.5 {% if category == 'error' %}bg-error-container text-on-error-container border border-error/20{% elif category == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-surface-container-high text-primary border border-[#E8EDF3]{% endif %}">
+              <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">
+                {% if category == 'error' %}error{% elif category == 'success' %}check_circle{% else %}info{% endif %}
+              </span>
+              <span class="flex-1 font-medium">{{ message }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+
           <!-- Page Header -->
           <section class="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg">
             <div class="space-y-1">
               <div class="flex items-center gap-space-xs text-secondary mb-1">
                 <span class="material-symbols-outlined text-[16px]">shield</span>
-                <span class="font-label-sm text-label-sm tracking-widest uppercase">AES-256 Workspace</span>
+                <span class="font-label-sm text-label-sm tracking-widest uppercase">AES-256-GCM Workspace</span>
               </div>
               <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">My Documents</h1>
-              <p class="font-body-md text-body-md text-on-surface-variant">Manage and organize your confidential files.
-              </p>
+              <p class="font-body-md text-body-md text-on-surface-variant">Manage and access your authenticated encrypted documents.</p>
             </div>
             <div class="flex items-center gap-space-sm shrink-0">
-              <button
+              <a
                 class="group inline-flex items-center gap-2 px-space-md py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container active:scale-[0.98] transition-all shadow-sm"
-                type="button">
+                href="{{ url_for('main.upload_document') }}">
                 <span
                   class="material-symbols-outlined text-[20px] transition-transform group-hover:rotate-90">add</span>
                 <span class="font-label-md text-label-md">Upload Document</span>
-              </button>
+              </a>
             </div>
           </section>
-          <!-- Metrics / Quick Telemetry Overview Bar -->
+
+          <!-- Metrics / Real Telemetry Overview Bar -->
           <section class="grid grid-cols-1 md:grid-cols-3 gap-space-md mb-space-lg">
             <div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
               <div class="space-y-0.5">
-                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Storage
-                  Quota</span>
-                <div class="font-headline-md text-headline-md text-on-surface">13.09 MB <span
-                    class="font-body-sm text-body-sm text-on-surface-variant font-normal">/ 50 GB</span></div>
+                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Storage Quota</span>
+                <div class="font-headline-md text-headline-md text-on-surface">{{ metrics.storage_used_str }} <span
+                    class="font-body-sm text-body-sm text-on-surface-variant font-normal">/ 10 GB ({{ metrics.storage_percent }}%)</span></div>
               </div>
               <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary">
                 <svg class="w-8 h-8 -rotate-90" viewbox="0 0 36 36">
                   <circle class="text-surface-container-high stroke-current" cx="18" cy="18" fill="none" r="14"
                     stroke-width="3"></circle>
                   <circle class="text-secondary stroke-current" cx="18" cy="18" fill="none" r="14" stroke-dasharray="88"
-                    stroke-dashoffset="65" stroke-linecap="round" stroke-width="3"></circle>
+                    stroke-dashoffset="{{ (88 - (88 * metrics.storage_percent / 100))|round }}" stroke-linecap="round" stroke-width="3"></circle>
                 </svg>
               </div>
             </div>
             <div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
               <div class="space-y-0.5">
-                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Vault
-                  Status</span>
+                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Vault Status</span>
                 <div class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-                  <span>Compliant</span>
+                  <span>AES-256 Compliant</span>
                   <span class="inline-flex w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
                 </div>
               </div>
@@ -188,9 +203,8 @@
             </div>
             <div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
               <div class="space-y-0.5">
-                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Audit
-                  Logging</span>
-                <div class="font-headline-md text-headline-md text-on-surface">Active (Immutable)</div>
+                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Audit Logging</span>
+                <div class="font-headline-md text-headline-md text-on-surface">Active ({{ metrics.recent_activity_count }} Events)</div>
               </div>
               <div
                 class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-on-surface-variant">
@@ -216,51 +230,27 @@
                 <button
                   class="px-space-sm py-1.5 rounded-md bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm transition-colors"
                   type="button">
-                  All <span class="ml-1 opacity-70 font-normal">42</span>
+                  All <span class="ml-1 opacity-70 font-normal">{{ documents|length + shared_docs|length }}</span>
                 </button>
                 <button
                   class="px-space-sm py-1.5 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors"
                   type="button">
-                  Private <span class="ml-1 opacity-70 font-normal">27</span>
+                  Private <span class="ml-1 opacity-70 font-normal">{{ documents|length }}</span>
                 </button>
                 <button
                   class="px-space-sm py-1.5 rounded-md text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors"
                   type="button">
-                  Shared <span class="ml-1 opacity-70 font-normal">15</span>
+                  Shared <span class="ml-1 opacity-70 font-normal">{{ shared_docs|length }}</span>
                 </button>
               </div>
-              <!-- File Type Dropdown Filter -->
-              <div class="relative">
-                <button
-                  class="h-9 px-space-sm flex items-center gap-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors"
-                  type="button">
-                  <span>File Type: All</span>
-                  <span class="material-symbols-outlined text-[16px] text-on-surface-variant">keyboard_arrow_down</span>
-                </button>
+              <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low text-secondary font-label-sm text-label-sm">
+                <span class="material-symbols-outlined text-[16px]">lock</span>
+                <span>Zero-Knowledge Storage</span>
               </div>
             </div>
-            <!-- Right Controls: View Switch & Sort -->
+            <!-- Right Controls -->
             <div class="flex items-center justify-between lg:justify-end gap-space-sm shrink-0">
-              <div class="relative">
-                <button
-                  class="h-9 px-space-sm flex items-center gap-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors"
-                  type="button">
-                  <span class="text-on-surface-variant">Sort:</span>
-                  <span>Last modified</span>
-                  <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
-                </button>
-              </div>
-              <!-- View Switcher -->
-              <div class="flex items-center p-0.5 bg-surface-container-low rounded-lg">
-                <button aria-label="List View" class="p-1.5 rounded bg-surface-container-lowest text-primary shadow-sm"
-                  type="button">
-                  <span class="material-symbols-outlined text-[18px]">format_list_bulleted</span>
-                </button>
-                <button aria-label="Grid View" class="p-1.5 rounded text-on-surface-variant hover:text-on-surface"
-                  type="button">
-                  <span class="material-symbols-outlined text-[18px]">grid_view</span>
-                </button>
-              </div>
+              <span class="text-xs text-on-surface-variant font-medium">Enclave: AES-GCM Encrypted</span>
             </div>
           </section>
           <!-- Documents Data Table Container -->
@@ -271,329 +261,134 @@
                 <thead>
                   <tr
                     class="bg-surface-container-low/60 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                    <th class="py-3 px-space-md w-12 text-center" scope="col">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </th>
                     <th class="py-3 px-space-md" scope="col">Name</th>
                     <th class="py-3 px-space-md w-36" scope="col">Size</th>
-                    <th class="py-3 px-space-md w-44" scope="col">Last Modified</th>
+                    <th class="py-3 px-space-md w-44" scope="col">Uploaded / Modified</th>
                     <th class="py-3 px-space-md w-36" scope="col">Access</th>
-                    <th class="py-3 px-space-md w-16 text-right" scope="col">Actions</th>
+                    <th class="py-3 px-space-md w-28 text-right" scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface"
                   id="document-table-body">
-                  <!-- Row 1: PDF Assessment -->
-                  <tr class="hover:bg-surface transition-colors group">
-                    <td class="py-4 px-space-md text-center">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </td>
-                    <td class="py-4 px-space-md">
-                      <div class="flex items-center gap-space-sm min-w-0">
-                        <div
-                          class="w-9 h-9 rounded-lg bg-error-container/60 text-error flex items-center justify-center shrink-0">
-                          <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+                  {% if documents or shared_docs %}
+                    {# 1. Owned Documents #}
+                    {% for doc in documents %}
+                    <tr class="hover:bg-surface transition-colors group">
+                      <td class="py-4 px-space-md">
+                        <div class="flex items-center gap-space-sm min-w-0">
+                          <div
+                            class="w-9 h-9 rounded-lg {% if doc.file_extension == 'pdf' %}bg-error-container/60 text-error{% elif doc.file_extension in ['xlsx','xls','csv'] %}bg-secondary-container/30 text-secondary{% elif doc.file_extension in ['png','jpg','jpeg'] %}bg-surface-container-high text-primary{% else %}bg-primary-container text-on-primary{% endif %} flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">
+                              {% if doc.file_extension == 'pdf' %}picture_as_pdf{% elif doc.file_extension in ['xlsx','xls','csv'] %}table_chart{% elif doc.file_extension in ['png','jpg','jpeg'] %}image{% else %}description{% endif %}
+                            </span>
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors">{{ doc.title }}</span>
+                            <span class="font-body-sm text-body-sm text-outline truncate">{{ doc.original_filename }} • AES-256-GCM</span>
+                          </div>
                         </div>
-                        <div class="flex flex-col min-w-0">
-                          <span
-                            class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors cursor-pointer">Quarterly_Vulnerability_Assessment.pdf</span>
-                          <span class="font-body-sm text-body-sm text-outline truncate">Confidential • SOC2
-                            Redacted</span>
+                      </td>
+                      <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">{{ doc.formatted_size }}</td>
+                      <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">{{ doc.created_at.strftime('%b %d, %Y') }}</td>
+                      <td class="py-4 px-space-md">
+                        {% if doc.is_shared %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-medium">
+                          <span class="material-symbols-outlined text-[13px]">group</span>
+                          Shared
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-medium">
+                          <span class="material-symbols-outlined text-[13px]">lock</span>
+                          Private
+                        </span>
+                        {% endif %}
+                      </td>
+                      <td class="py-4 px-space-md text-right">
+                        <div class="flex items-center justify-end gap-1">
+                          <a href="{{ url_for('main.download_document', document_id=doc.id) }}"
+                             class="p-1.5 rounded-lg text-primary hover:bg-surface-container transition-colors"
+                             title="Download Decrypted File">
+                            <span class="material-symbols-outlined text-[18px]">download</span>
+                          </a>
+                          <form method="POST" action="{{ url_for('main.delete_document_route', document_id=doc.id) }}" class="inline"
+                                onsubmit="return confirm('Permanently delete {{ doc.title }}?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="p-1.5 rounded-lg text-error hover:bg-error-container transition-colors" title="Delete Document">
+                              <span class="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </form>
                         </div>
-                      </div>
-                    </td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">3.8 MB</td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">Oct 14, 2024</td>
-                    <td class="py-4 px-space-md">
-                      <span
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
-                        <span class="material-symbols-outlined text-[12px]">lock</span>
-                        Private
-                      </span>
-                    </td>
-                    <td class="py-4 px-space-md text-right">
-                      <button
-                        class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-                        title="Options" type="button">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <!-- Row 2: Excel Compensation -->
-                  <tr class="hover:bg-surface transition-colors group">
-                    <td class="py-4 px-space-md text-center">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </td>
-                    <td class="py-4 px-space-md">
-                      <div class="flex items-center gap-space-sm min-w-0">
-                        <div
-                          class="w-9 h-9 rounded-lg bg-secondary-container/30 text-secondary flex items-center justify-center shrink-0">
-                          <span class="material-symbols-outlined text-[20px]">table_chart</span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+
+                    {# 2. Shared Documents Delegated to this User #}
+                    {% for share in shared_docs %}
+                    <tr class="hover:bg-surface transition-colors group bg-surface-container-low/30">
+                      <td class="py-4 px-space-md">
+                        <div class="flex items-center gap-space-sm min-w-0">
+                          <div class="w-9 h-9 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">share</span>
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-label-md text-label-md text-on-surface font-semibold truncate">{{ share.document.title }}</span>
+                            <span class="font-body-sm text-body-sm text-secondary truncate">Shared by {{ share.shared_by.full_name }}</span>
+                          </div>
                         </div>
-                        <div class="flex flex-col min-w-0">
-                          <span
-                            class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors cursor-pointer">Faculty_Compensation_Review.xlsx</span>
-                          <span class="font-body-sm text-body-sm text-outline truncate">Compensation Board • Encrypted
-                            Cell Data</span>
+                      </td>
+                      <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">{{ share.document.formatted_size }}</td>
+                      <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">{{ share.created_at.strftime('%b %d, %Y') }}</td>
+                      <td class="py-4 px-space-md">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-medium">
+                          <span class="material-symbols-outlined text-[13px]">shield_person</span>
+                          {{ share.permission_tier }}
+                        </span>
+                      </td>
+                      <td class="py-4 px-space-md text-right">
+                        <a href="{{ url_for('main.download_document', document_id=share.document.id) }}"
+                           class="p-1.5 rounded-lg text-primary hover:bg-surface-container transition-colors inline-block"
+                           title="Download Decrypted File">
+                          <span class="material-symbols-outlined text-[18px]">download</span>
+                        </a>
+                      </td>
+                    </tr>
+                    {% endfor %}
+
+                  {% else %}
+                    {# Empty State #}
+                    <tr>
+                      <td colspan="5" class="py-16 text-center">
+                        <div class="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
+                          <div class="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-outline">
+                            <span class="material-symbols-outlined text-[32px]">folder_open</span>
+                          </div>
+                          <div>
+                            <h4 class="font-headline-md text-headline-md text-on-surface font-semibold">No documents uploaded yet</h4>
+                            <p class="font-body-md text-body-md text-on-surface-variant mt-1">Upload your first document to encrypt it with AES-256-GCM and store it securely.</p>
+                          </div>
+                          <a href="{{ url_for('main.upload_document') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-all shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">upload</span>
+                            <span>Upload Document</span>
+                          </a>
                         </div>
-                      </div>
-                    </td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">950 KB</td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">Oct 10, 2024</td>
-                    <td class="py-4 px-space-md">
-                      <span
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
-                        <span class="material-symbols-outlined text-[12px]">lock</span>
-                        Private
-                      </span>
-                    </td>
-                    <td class="py-4 px-space-md text-right">
-                      <button
-                        class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-                        title="Options" type="button">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <!-- Row 3: Terraform Code -->
-                  <tr class="hover:bg-surface transition-colors group">
-                    <td class="py-4 px-space-md text-center">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </td>
-                    <td class="py-4 px-space-md">
-                      <div class="flex items-center gap-space-sm min-w-0">
-                        <div
-                          class="w-9 h-9 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
-                          <span class="material-symbols-outlined text-[20px]">terminal</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span
-                            class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors cursor-pointer">Cloud_Infrastructure_Terraform.tf</span>
-                          <span class="font-body-sm text-body-sm text-outline truncate">Prod VPC • AWS us-east-1
-                            Keys</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">45 KB</td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">Oct 02, 2024</td>
-                    <td class="py-4 px-space-md">
-                      <span
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">
-                        <span class="material-symbols-outlined text-[12px]">group</span>
-                        Shared (2)
-                      </span>
-                    </td>
-                    <td class="py-4 px-space-md text-right">
-                      <button
-                        class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-                        title="Options" type="button">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <!-- Row 4: HSM Specs PDF -->
-                  <tr class="hover:bg-surface transition-colors group">
-                    <td class="py-4 px-space-md text-center">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </td>
-                    <td class="py-4 px-space-md">
-                      <div class="flex items-center gap-space-sm min-w-0">
-                        <div
-                          class="w-9 h-9 rounded-lg bg-error-container/60 text-error flex items-center justify-center shrink-0">
-                          <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span
-                            class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors cursor-pointer">Hardware_Security_Module_Specs.pdf</span>
-                          <span class="font-body-sm text-body-sm text-outline truncate">FIPS 140-3 Cryptographic
-                            Boundary Specs</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">2.4 MB</td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">Sep 28, 2024</td>
-                    <td class="py-4 px-space-md">
-                      <span
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">
-                        <span class="material-symbols-outlined text-[12px]">group</span>
-                        Shared (4)
-                      </span>
-                    </td>
-                    <td class="py-4 px-space-md text-right">
-                      <button
-                        class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-                        title="Options" type="button">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <!-- Row 5: Exam Keys PDF -->
-                  <tr class="hover:bg-surface transition-colors group">
-                    <td class="py-4 px-space-md text-center">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </td>
-                    <td class="py-4 px-space-md">
-                      <div class="flex items-center gap-space-sm min-w-0">
-                        <div
-                          class="w-9 h-9 rounded-lg bg-error-container/60 text-error flex items-center justify-center shrink-0">
-                          <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span
-                            class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors cursor-pointer">Semester_Exam_Answer_Keys_2024.pdf</span>
-                          <span class="font-body-sm text-body-sm text-outline truncate">Faculty Exclusive • Sealed
-                            Enclave</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">4.8 MB</td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">Sep 15, 2024</td>
-                    <td class="py-4 px-space-md">
-                      <span
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
-                        <span class="material-symbols-outlined text-[12px]">lock</span>
-                        Private
-                      </span>
-                    </td>
-                    <td class="py-4 px-space-md text-right">
-                      <button
-                        class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-                        title="Options" type="button">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <!-- Row 6: Word Document -->
-                  <tr class="hover:bg-surface transition-colors group">
-                    <td class="py-4 px-space-md text-center">
-                      <input class="w-4 h-4 rounded text-secondary focus:ring-0 focus:outline-none cursor-pointer"
-                        type="checkbox" />
-                    </td>
-                    <td class="py-4 px-space-md">
-                      <div class="flex items-center gap-space-sm min-w-0">
-                        <div
-                          class="w-9 h-9 rounded-lg bg-primary-fixed/60 text-primary flex items-center justify-center shrink-0">
-                          <span class="material-symbols-outlined text-[20px]">description</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span
-                            class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors cursor-pointer">Executive_Briefing_Q4.docx</span>
-                          <span class="font-body-sm text-body-sm text-outline truncate">Senior Staff • Strategy &
-                            Operations</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">1.1 MB</td>
-                    <td class="py-4 px-space-md font-body-sm text-body-sm text-on-surface-variant">Sep 02, 2024</td>
-                    <td class="py-4 px-space-md">
-                      <span
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">
-                        <span class="material-symbols-outlined text-[12px]">group</span>
-                        Shared (1)
-                      </span>
-                    </td>
-                    <td class="py-4 px-space-md text-right">
-                      <button
-                        class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-                        title="Options" type="button">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  {% endif %}
                 </tbody>
               </table>
             </div>
-            <!-- Pagination Footer -->
+            <!-- Pagination / Stats Footer -->
             <div
               class="flex flex-col sm:flex-row items-center justify-between gap-space-sm px-space-md py-3 bg-surface-container-low/40">
               <span class="font-body-sm text-body-sm text-on-surface-variant">Showing <strong
-                  class="font-semibold text-on-surface">1</strong> to <strong
-                  class="font-semibold text-on-surface">6</strong> of <strong
-                  class="font-semibold text-on-surface">42</strong> documents</span>
+                  class="font-semibold text-on-surface">{{ documents|length + shared_docs|length }}</strong> of <strong
+                  class="font-semibold text-on-surface">{{ documents|length + shared_docs|length }}</strong> documents</span>
               <div class="flex items-center gap-space-xs">
-                <button
-                  class="px-space-sm py-1.5 rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface font-label-md text-label-md shadow-sm transition-colors flex items-center gap-1 disabled:opacity-50"
-                  disabled="" type="button">
-                  <span class="material-symbols-outlined text-[16px]">chevron_left</span>
-                  <span>Previous</span>
-                </button>
-                <span class="px-space-sm py-1 font-body-sm text-body-sm text-on-surface font-medium">Page 1 of 7</span>
-                <button
-                  class="px-space-sm py-1.5 rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface font-label-md text-label-md shadow-sm transition-colors flex items-center gap-1"
-                  type="button">
-                  <span>Next</span>
-                  <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <!-- Interactive Sandbox & Empty State Preview Accordion -->
-          <div class="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-md mb-space-lg">
-            <div class="flex items-center justify-between cursor-pointer select-none" id="toggle-empty-state">
-              <div class="flex items-center gap-space-sm">
-                <div
-                  class="w-8 h-8 rounded-lg bg-surface-container-low text-secondary flex items-center justify-center">
-                  <span class="material-symbols-outlined text-[18px]">design_services</span>
-                </div>
-                <div>
-                  <h3 class="font-label-md text-label-md text-on-surface font-semibold">Empty State Demonstration</h3>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">Preview how empty directories and
-                    unpopulated filter results appear.</p>
-                </div>
-              </div>
-              <button class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-transform"
-                id="toggle-empty-icon" type="button">
-                <span class="material-symbols-outlined text-[20px]">expand_more</span>
-              </button>
-            </div>
-            <!-- Collapsible Empty State Container -->
-            <div class="hidden mt-space-md pt-space-md" id="empty-state-content">
-              <div
-                class="py-space-xl px-space-md rounded-xl bg-surface-container-low flex flex-col items-center justify-center text-center max-w-xl mx-auto">
-                <div
-                  class="w-16 h-16 rounded-2xl bg-surface-container-lowest shadow-sm flex items-center justify-center text-outline mb-space-md">
-                  <span class="material-symbols-outlined text-[36px]">folder_open</span>
-                </div>
-                <h4 class="font-headline-md text-headline-md text-on-surface mb-1">No documents found in this folder
-                </h4>
-                <p class="font-body-md text-body-md text-on-surface-variant max-w-md mb-space-md">
-                  This sub-vault does not contain any active records. Upload your first document to get started or
-                  import credentials from an external archive.
-                </p>
-                <button
-                  class="inline-flex items-center gap-2 px-space-md py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm"
-                  type="button">
-                  <span class="material-symbols-outlined text-[18px]">upload</span>
-                  <span class="font-label-md text-label-md">Upload Your First Document</span>
-                </button>
+                <span class="text-xs text-outline">Database Connected • SHA-256 Verified</span>
               </div>
             </div>
           </div>
           <script>
-            // Toggle Empty State demonstration viewer
-            const toggleBtn = document.getElementById('toggle-empty-state');
-            const content = document.getElementById('empty-state-content');
-            const icon = document.getElementById('toggle-empty-icon');
-
-            if (toggleBtn && content && icon) {
-              toggleBtn.addEventListener('click', () => {
-                const isHidden = content.classList.contains('hidden');
-                if (isHidden) {
-                  content.classList.remove('hidden');
-                  icon.style.transform = 'rotate(180deg)';
-                } else {
-                  content.classList.add('hidden');
-                  icon.style.transform = 'rotate(0deg)';
-                }
-              });
-            }
-
             // Live search filter micro-interaction
             const searchInput = document.getElementById('vault-search-input');
             const tableBody = document.getElementById('document-table-body');

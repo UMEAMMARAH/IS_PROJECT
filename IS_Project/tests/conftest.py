@@ -72,3 +72,29 @@ def admin_user(db):
     db.session.add(admin)
     db.session.commit()
     return admin
+
+
+@pytest.fixture
+def authenticated_client(client, regular_user):
+    """Client authenticated as regular_user."""
+    get_res = client.get('/login')
+    token = extract_csrf_token(get_res.get_data(as_text=True))
+    client.post('/login', data={
+        'csrf_token': token,
+        'email': regular_user.email,
+        'password': 'SecurePass123!'
+    }, follow_redirects=True)
+    return client
+
+
+@pytest.fixture
+def authenticated_admin(client, admin_user):
+    """Client authenticated as admin_user."""
+    get_res = client.get('/login')
+    token = extract_csrf_token(get_res.get_data(as_text=True))
+    client.post('/login', data={
+        'csrf_token': token,
+        'email': admin_user.email,
+        'password': 'AdminPass123!'
+    }, follow_redirects=True)
+    return client

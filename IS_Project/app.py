@@ -292,6 +292,22 @@ def create_app(config_class=Config):
         db.create_all()
         click.echo("Database initialized successfully.")
 
+    @app.cli.command("inspect-db")
+    def inspect_db():
+        """Safely inspect database tables and record counts without exposing sensitive data."""
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        click.echo("=" * 55)
+        click.echo("SECUREVAULT DATABASE AUDIT INSPECTION")
+        click.echo(f"Database Engine: SQLite ({app.config.get('SQLALCHEMY_DATABASE_URI')})")
+        click.echo("=" * 55)
+        for table in tables:
+            count = db.session.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar()
+            columns = [c['name'] for c in inspector.get_columns(table)]
+            click.echo(f"  * Table: {table:<16} | Rows: {count:<4} | Columns: {', '.join(columns)}")
+        click.echo("=" * 55)
+
     return app
 
 

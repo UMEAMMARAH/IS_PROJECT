@@ -57,7 +57,7 @@ def register():
             login_user(user)
             session.permanent = True
 
-            flash(f"Welcome, {user.full_name}! Your account is ready.", "success")
+            flash("Account registered successfully! Welcome to SecureVault.", "success")
             return redirect(url_for('main.dashboard')) 
         except Exception as e:
             db.session.rollback()

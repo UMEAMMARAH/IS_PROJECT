@@ -80,7 +80,7 @@
 <div class="flex items-center gap-3">
 <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm">
 <span class="w-2 h-2 rounded-full bg-secondary"></span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Active Seats: <strong class="text-on-surface font-semibold">28/50</strong></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Active Shares: <strong class="text-on-surface font-semibold">{{ active_shares|length }}</strong></span>
 </div>
 <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm">
 <span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
@@ -88,6 +88,24 @@
 </div>
 </div>
 </div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="mb-space-md space-y-2">
+  {% for category, message in messages %}
+  <div
+    class="p-3.5 rounded-xl text-sm flex items-start gap-2.5 {% if category == 'error' %}bg-error-container text-on-error-container border border-error/20{% elif category == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-surface-container-high text-primary border border-[#E8EDF3]{% endif %}">
+    <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">
+      {% if category == 'error' %}error{% elif category == 'success' %}check_circle{% else %}info{% endif %}
+    </span>
+    <span class="flex-1 font-medium">{{ message }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
 <!-- Section 1: Grant Access Card -->
 <section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm transition-shadow hover:shadow-md mb-space-xl">
 <div class="flex items-start justify-between mb-space-md">
@@ -97,35 +115,39 @@
 </div>
 <div>
 <h2 class="font-headline-md text-headline-md text-primary">Share a Document</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Select a document and grant access to team members or external collaborators.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Select a document and grant secure access to collaborators by email address.</p>
 </div>
 </div>
 <span class="font-label-sm text-label-sm px-2.5 py-1 rounded bg-surface-container-low text-secondary font-medium tracking-normal">
-        RSA-4096 Key Wrapping
-      </span>
+        AES-256-GCM Clearance
+</span>
 </div>
-<form class="space-y-space-md" onsubmit="event.preventDefault();">
+<form method="POST" action="{{ url_for('main.share_document_route') }}" class="space-y-space-md">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-end">
 <!-- 1. Document selector -->
 <div class="lg:col-span-4 space-y-1.5">
 <label class="block font-label-md text-label-md text-on-surface font-medium">Select Document</label>
 <div class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">description</span>
-<select class="w-full h-[38px] pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface appearance-none focus:outline-none focus:bg-surface-container-low transition-colors cursor-pointer shadow-sm">
-<option selected="">Q3_Financial_Audit_Report.pdf (2.4 MB)</option>
-<option>Faculty_Compensation_Review.xlsx (1.1 MB)</option>
-<option>Board_Resolution_2024_Final.pdf (890 KB)</option>
-<option>Institutional_Endowment_Ledger.csv (4.8 MB)</option>
+<select name="document_id" required class="w-full h-[38px] pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface appearance-none focus:outline-none focus:bg-surface-container-low transition-colors cursor-pointer shadow-sm">
+{% if user_docs %}
+  {% for doc in user_docs %}
+  <option value="{{ doc.id }}">{{ doc.title }} ({{ doc.formatted_size }})</option>
+  {% endfor %}
+{% else %}
+  <option value="" disabled selected>No uploaded documents available</option>
+{% endif %}
 </select>
 <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">expand_more</span>
 </div>
 </div>
 <!-- 2. Recipient search -->
 <div class="lg:col-span-4 space-y-1.5">
-<label class="block font-label-md text-label-md text-on-surface font-medium">Recipient Collaborator</label>
+<label class="block font-label-md text-label-md text-on-surface font-medium">Recipient Collaborator Email</label>
 <div class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">alternate_email</span>
-<input class="w-full h-[38px] pl-9 pr-3 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors shadow-sm" placeholder="name@domain.edu" type="email" value="elena.rostova@university.edu"/>
+<input name="recipient_email" required class="w-full h-[38px] pl-9 pr-3 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors shadow-sm" placeholder="collaborator@university.edu" type="email" value=""/>
 </div>
 </div>
 <!-- 3. Permission level selector -->
@@ -133,10 +155,10 @@
 <label class="block font-label-md text-label-md text-on-surface font-medium">Permission Tier</label>
 <div class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">shield_person</span>
-<select class="w-full h-[38px] pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface appearance-none focus:outline-none focus:bg-surface-container-low transition-colors cursor-pointer shadow-sm">
-<option>Viewer (Can view and download)</option>
-<option selected="">Editor (Can view, download, and update)</option>
-<option>Auditor (Time-bound read only + watermarked)</option>
+<select name="permission_tier" class="w-full h-[38px] pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface appearance-none focus:outline-none focus:bg-surface-container-low transition-colors cursor-pointer shadow-sm">
+<option value="Viewer">Viewer (Can view and download)</option>
+<option value="Editor" selected>Editor (Can view, download, and update)</option>
+<option value="Auditor">Auditor (Time-bound read only)</option>
 </select>
 <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">expand_more</span>
 </div>
@@ -146,9 +168,9 @@
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 gap-space-sm">
 <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
 <span class="material-symbols-outlined text-[16px] text-secondary">info</span>
-<span>Access link expires automatically after 30 days unless renewed.</span>
+<span>Access delegation is audited in real time and can be revoked at any time.</span>
 </div>
-<button class="h-9 px-5 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-colors font-label-md text-label-md font-medium shadow-sm flex items-center gap-2" type="button">
+<button class="h-9 px-5 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-colors font-label-md text-label-md font-medium shadow-sm flex items-center gap-2" type="submit">
 <span class="material-symbols-outlined text-[18px]">send</span>
 <span>Share Document</span>
 </button>
@@ -189,132 +211,66 @@
 </tr>
 </thead>
 <tbody class="divide-y divide-surface-container-low">
-<!-- Row 1 (Target of Active Revoke Interaction) -->
-<tr class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors">
-<td class="py-3.5 px-4 font-body-md text-body-md text-on-surface font-medium whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[18px] text-error">picture_as_pdf</span>
-<span class="hover:text-secondary cursor-pointer">Q3_Financial_Audit_Report.pdf</span>
-</div>
-</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<div class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-sm text-label-sm font-semibold">MB</div>
-<span class="text-on-surface font-medium">Marcus Brody</span>
-</div>
-</td>
-<td class="py-3.5 px-4 text-on-surface-variant font-body-sm text-body-sm whitespace-nowrap">marcus.brody@university.edu</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<span class="inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm font-medium bg-primary-fixed text-on-primary-fixed">
-                Editor
-              </span>
-</td>
-<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Oct 14, 2024</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<div class="flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-<span class="text-on-surface font-label-sm text-label-sm font-medium">Active</span>
-</div>
-</td>
-<td class="py-3.5 px-4 text-right whitespace-nowrap">
-<div class="flex items-center justify-end gap-3">
-<button class="text-on-surface-variant hover:text-primary font-label-md text-label-md font-medium transition-colors flex items-center gap-0.5" type="button">
-<span>Change Role</span>
-<span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
-</button>
-<button class="text-error hover:text-on-error-container font-label-md text-label-md font-medium transition-colors" onclick="document.getElementById('revoke-modal-backdrop').classList.remove('hidden')" type="button">
-                  Revoke Access
-                </button>
-</div>
-</td>
-</tr>
-<!-- Row 2 -->
-<tr class="hover:bg-surface-container-low transition-colors">
-<td class="py-3.5 px-4 font-body-md text-body-md text-on-surface font-medium whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[18px] text-error">picture_as_pdf</span>
-<span class="hover:text-secondary cursor-pointer">Q3_Financial_Audit_Report.pdf</span>
-</div>
-</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<div class="w-6 h-6 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-label-sm text-label-sm font-semibold">SJ</div>
-<span class="text-on-surface font-medium">Sarah Jenkins</span>
-</div>
-</td>
-<td class="py-3.5 px-4 text-on-surface-variant font-body-sm text-body-sm whitespace-nowrap">sarah.j@techcorp.io</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<span class="inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm font-medium bg-surface-container-high text-on-surface-variant">
-                Viewer
-              </span>
-</td>
-<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Oct 10, 2024</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<div class="flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-<span class="text-on-surface font-label-sm text-label-sm font-medium">Active</span>
-</div>
-</td>
-<td class="py-3.5 px-4 text-right whitespace-nowrap">
-<div class="flex items-center justify-end gap-3">
-<button class="text-on-surface-variant hover:text-primary font-label-md text-label-md font-medium transition-colors flex items-center gap-0.5" type="button">
-<span>Change Role</span>
-<span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
-</button>
-<button class="text-error hover:text-on-error-container font-label-md text-label-md font-medium transition-colors" onclick="document.getElementById('revoke-modal-backdrop').classList.remove('hidden')" type="button">
-                  Revoke Access
-                </button>
-</div>
-</td>
-</tr>
-<!-- Row 3 -->
-<tr class="hover:bg-surface-container-low transition-colors">
-<td class="py-3.5 px-4 font-body-md text-body-md text-on-surface font-medium whitespace-nowrap">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[18px] text-secondary">table_view</span>
-<span class="hover:text-secondary cursor-pointer">Faculty_Compensation_Review.xlsx</span>
-</div>
-</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<div class="flex items-center gap-2">
-<div class="w-6 h-6 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-label-sm text-label-sm font-semibold">HC</div>
-<span class="text-on-surface font-medium">Dr. H. Collins</span>
-</div>
-</td>
-<td class="py-3.5 px-4 text-on-surface-variant font-body-sm text-body-sm whitespace-nowrap">collins@university.edu</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<span class="inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm font-medium bg-surface-container-high text-on-surface-variant">
-                Viewer
-              </span>
-</td>
-<td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">Sep 29, 2024</td>
-<td class="py-3.5 px-4 whitespace-nowrap">
-<div class="flex items-center gap-1.5">
-<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-<span class="text-on-surface font-label-sm text-label-sm font-medium">Active</span>
-</div>
-</td>
-<td class="py-3.5 px-4 text-right whitespace-nowrap">
-<div class="flex items-center justify-end gap-3">
-<button class="text-on-surface-variant hover:text-primary font-label-md text-label-md font-medium transition-colors flex items-center gap-0.5" type="button">
-<span>Change Role</span>
-<span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
-</button>
-<button class="text-error hover:text-on-error-container font-label-md text-label-md font-medium transition-colors" onclick="document.getElementById('revoke-modal-backdrop').classList.remove('hidden')" type="button">
-                  Revoke Access
-                </button>
-</div>
-</td>
-</tr>
+{% if active_shares %}
+  {% for share in active_shares %}
+  <tr class="hover:bg-surface-container-low transition-colors">
+    <td class="py-3.5 px-4 font-body-md text-body-md text-on-surface font-medium whitespace-nowrap">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px] text-secondary">description</span>
+        <span class="font-medium text-primary">{{ share.document.title }}</span>
+      </div>
+    </td>
+    <td class="py-3.5 px-4 whitespace-nowrap">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-sm text-label-sm font-semibold">
+          {{ (share.shared_with_user.full_name[:2].upper()) if share.shared_with_user else 'EX' }}
+        </div>
+        <span class="text-on-surface font-medium">{{ share.shared_with_user.full_name if share.shared_with_user else 'External User' }}</span>
+      </div>
+    </td>
+    <td class="py-3.5 px-4 text-on-surface-variant font-body-sm text-body-sm whitespace-nowrap">{{ share.shared_with_email }}</td>
+    <td class="py-3.5 px-4 whitespace-nowrap">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm font-medium bg-primary-fixed text-on-primary-fixed">
+        {{ share.permission_tier }}
+      </span>
+    </td>
+    <td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">{{ share.created_at.strftime('%b %d, %Y') }}</td>
+    <td class="py-3.5 px-4 whitespace-nowrap">
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+        <span class="text-on-surface font-label-sm text-label-sm font-medium">Active</span>
+      </div>
+    </td>
+    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+      <form method="POST" action="{{ url_for('main.revoke_share_route', share_id=share.id) }}" class="inline"
+            onsubmit="return confirm('Revoke document access for {{ share.shared_with_email }}?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="text-error hover:text-on-error-container font-label-md text-label-md font-medium transition-colors">
+          Revoke Access
+        </button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="7" class="py-12 text-center text-on-surface-variant font-body-md">
+      <div class="flex flex-col items-center justify-center space-y-2 max-w-sm mx-auto">
+        <span class="material-symbols-outlined text-4xl text-outline">lock_open</span>
+        <p class="font-semibold text-on-surface">No active document shares</p>
+        <p class="text-xs text-outline">Select an uploaded document above and enter a recipient's email to grant secure access.</p>
+      </div>
+    </td>
+  </tr>
+{% endif %}
 </tbody>
 </table>
 </div>
 <!-- Table Pagination / Status Footer -->
 <div class="px-space-md py-3 bg-surface-container-low flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
-<span>Showing 3 of 3 direct collaborator permissions</span>
+<span>Showing {{ active_shares|length }} active permission grant(s)</span>
 <div class="flex items-center gap-1">
-<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface font-medium shadow-sm hover:bg-surface-bright transition-colors" disabled="">Previous</button>
-<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface font-medium shadow-sm hover:bg-surface-bright transition-colors" disabled="">Next</button>
+<span class="text-xs text-outline">Authenticated RBAC Delegation</span>
 </div>
 </div>
 </section>
@@ -326,58 +282,9 @@
 </div>
 <div>
 <h4 class="font-label-md text-label-md text-primary font-semibold">Zero-Knowledge Key Re-encryption</h4>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Whenever a collaborator is revoked, ephemeral symmetric file keys are rotated instantaneously at the client edge.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Whenever a collaborator is revoked, file access tokens are invalidated immediately and recorded in the audit log.</p>
 </div>
 </div>
-<a class="font-label-sm text-label-sm text-secondary hover:text-primary font-semibold whitespace-nowrap" href="#">Learn more →</a>
+<span class="font-label-sm text-label-sm text-secondary font-semibold whitespace-nowrap">Audit Logged</span>
 </div>
-<!-- Polished Confirmation Modal (Styled & displayed gracefully) -->
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm transition-opacity" id="revoke-modal-backdrop">
-<div class="relative w-full max-w-[480px] bg-surface-container-lowest rounded-2xl shadow-2xl p-6 overflow-hidden">
-<!-- Ambient decorative gradient top flare -->
-<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-error/40 via-error to-error/20"></div>
-<div class="flex items-start gap-4">
-<!-- Alert Icon in Soft Red Ring -->
-<div class="w-11 h-11 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-[24px]">lock_reset</span>
-</div>
-<div class="flex-1 min-w-0">
-<div class="flex items-center justify-between">
-<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Revoke Access?</h3>
-<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container-low transition-colors" onclick="document.getElementById('revoke-modal-backdrop').classList.add('hidden')" type="button">
-<span class="material-symbols-outlined text-[18px]">close</span>
-</button>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant mt-2">
-            Are you sure you want to revoke access for <strong class="text-on-surface font-semibold">Marcus Brody</strong>? They will immediately lose permission to view or download <strong class="text-on-surface font-semibold">Q3_Financial_Audit_Report.pdf</strong>.
-          </p>
-<!-- Security Notice Card -->
-<div class="mt-4 p-3 rounded-lg bg-surface-container-low flex items-start gap-2.5">
-<span class="material-symbols-outlined text-[16px] text-error mt-0.5">timer</span>
-<div class="text-on-surface-variant font-body-sm text-body-sm">
-<span class="font-semibold text-on-surface">Immediate effect:</span> All active decryption sessions and cached offline access tokens will be terminated at once.
-            </div>
-</div>
-<!-- Quick Action Buttons -->
-<div class="flex items-center justify-end gap-3 mt-6">
-<button class="px-4 py-2 text-label-md font-label-md font-medium text-on-surface-variant bg-surface-container-high hover:bg-surface-container-highest rounded-lg transition-colors" onclick="document.getElementById('revoke-modal-backdrop').classList.add('hidden')" type="button">
-              Cancel
-            </button>
-<button class="px-4 py-2 text-label-md font-label-md font-medium text-on-error bg-error hover:bg-on-error-container rounded-lg transition-colors shadow-sm flex items-center gap-1.5" onclick="handleRevokeConfirmation()" type="button">
-<span class="material-symbols-outlined text-[16px]">no_encryption</span>
-<span>Revoke Access</span>
-</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<script>
-    function handleRevokeConfirmation() {
-      const modal = document.getElementById('revoke-modal-backdrop');
-      if (modal) {
-        modal.classList.add('hidden');
-      }
-    }
-  </script>
 </div></div></main></div></body></html>
