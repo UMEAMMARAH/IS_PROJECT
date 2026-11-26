@@ -1,37 +1,39 @@
 # SecureVault – Secure Document Management System
 
-## Member 1: Authentication, RBAC, Session Management & Administrative User Governance
+SecureVault is an Information Security semester project providing encrypted document storage, owner-controlled document sharing, role-based governance, and audit logging.
 
-SecureVault is an enterprise-grade Information Security semester project developed to provide end-to-end encrypted document storage, cryptographic access delegation, role-based governance, and immutable audit logs.
-
-This repository houses the core **Member 1** implementation, delivering authentication, user management, RBAC, session security, rate limiting, and administrative user governance.
+This repository contains the **Member 1** implementation (authentication, RBAC, session security, admin user governance) together with the supporting security services used across the project (cryptography, document authorization, security headers).
 
 ---
 
 ## 1. Project Overview & Member 1 Responsibilities
 
-### Member 1 Responsibilities
-- **User Authentication**: Secure user registration, credential verification, and session lifecycle management.
-- **Role-Based Access Control (RBAC)**: Enforcing system-level permissions between `Admin` and `User` with server-side decorators (`@login_required`, `@admin_required`).
-- **Session Security & Hardening**: Defense against session fixation, CSRF attacks, credential brute-forcing, open redirect vulnerabilities, and insecure cookies (`HttpOnly`, `SameSite=Lax`).
-- **Profile & Credential Management**: Self-service profile updates and secure password rotation with current password verification and complexity validation.
-- **Admin User Governance**: Searchable user dashboard, role modification, account activation/deactivation, and safeguards preventing self-deactivation or demotion of the last active administrator.
-- **Audit Logging Bridge**: Dedicated integration interface (`services/audit_service.py`) for Member 3's audit module.
-- **Frontend Integration**: Connecting the Stitch AI frontend (`dashboard.html`, `document.html`, `share&permissions.html`, `upload.html`, `login.html`, `profile.html`, `admin_users.html`).
+- **User Authentication**: Registration, credential verification, logout, and session lifecycle management.
+- **Role-Based Access Control (RBAC)**: `Admin` and `User` roles enforced server-side with `@login_required` and `@admin_required`.
+- **Discretionary Access Control (DAC)**: Document owners decide who may access their documents (sharing).
+- **Document Isolation**: Users cannot access documents they do not own or that were not shared with them.
+- **Session Security & Hardening**: Protection against session fixation, CSRF, brute-force attacks, open redirects, and insecure cookies.
+- **Profile & Credential Management**: Profile updates and password rotation with current-password verification.
+- **Admin User Governance**: Searchable user list, role changes, activation/deactivation, with safeguards for self-deactivation and the last active administrator.
+- **Audit Logging Bridge**: `services/audit_service.py` exposes `record_audit_event()` for the audit module.
+- **Frontend Integration**: Jinja2 templates built from the Stitch AI design.
 
 ---
 
 ## 2. Technologies Used
 
-- **Language & Runtime**: Python 3.10+
-- **Framework**: Flask 3.0+
-- **Database ORM**: Flask-SQLAlchemy / SQLite
-- **Session & Identity**: Flask-Login
-- **Password Security**: Werkzeug (`scrypt` / `pbkdf2:sha256` key derivation)
-- **Form Security & CSRF**: Flask-WTF & WTForms
-- **Rate Limiting**: Flask-Limiter
-- **Testing**: pytest
-- **Frontend**: HTML5, Tailwind CSS, Material Symbols Outlined, Google Inter font
+| Area | Technology |
+|---|---|
+| Language | Python 3.10+ (tested on 3.13) |
+| Framework | Flask 3.0+ |
+| Database | Flask-SQLAlchemy / SQLite |
+| Sessions & identity | Flask-Login |
+| Password hashing | Werkzeug (`scrypt` / `pbkdf2:sha256`) |
+| Forms & CSRF | Flask-WTF / WTForms |
+| Rate limiting | Flask-Limiter |
+| Cryptography | `cryptography` library (AES-256-GCM, SHA-256, 3DES demo) |
+| Testing | pytest |
+| Frontend | HTML5, Tailwind CSS, Material Symbols, Inter font |
 
 ---
 
@@ -39,222 +41,228 @@ This repository houses the core **Member 1** implementation, delivering authenti
 
 ```text
 IS_Project/
+├── app.py                     # Application factory, routes, CLI commands
+├── config.py                  # Base, Development, Testing configurations
+├── extensions.py              # db, login_manager, csrf, limiter
+├── requirements.txt
+├── .env.example
+├── README.md
 │
-├── app.py                     # Flask application factory, routes & CLI commands
-├── config.py                  # Base, Development, and Testing configurations
-├── extensions.py              # Centralized extensions (db, login_manager, csrf, limiter)
-├── requirements.txt           # Project Python dependencies
-├── .env.example               # Template environment configuration
-├── .gitignore                 # Version control ignores
-├── README.md                  # Comprehensive project documentation
+├── authentication/            # Authentication & identity module
+│   ├── models.py              # User model (hashed passwords, role)
+│   ├── forms.py               # WTForms with validation
+│   ├── routes.py              # /register, /login, /logout, /profile
+│   └── decorators.py          # @login_required, @admin_required
 │
-├── authentication/            # Authentication & Identity Module
-│   ├── __init__.py            # Blueprint and export definitions
-│   ├── models.py              # User SQLAlchemy model (hashed passwords, RBAC)
-│   ├── forms.py               # Flask-WTF forms with security validation
-│   ├── routes.py              # /register, /login, /logout, /profile endpoints
-│   └── decorators.py          # @login_required, @admin_required RBAC decorators
+├── admin/                     # Administrative governance module
+│   └── routes.py              # /admin/users, toggle-status, change-role
 │
-├── admin/                     # Administrative Governance Module
-│   ├── __init__.py            # Admin blueprint definition
-│   └── routes.py              # /admin/users, toggle-status, change-role with safeguards
+├── services/
+│   ├── audit_service.py       # Audit logging bridge
+│   └── crypto_service.py      # AES-256-GCM, SHA-256, 3DES demo
+│                              # VERIFY: list any other services/modules (documents, sharing)
 │
-├── services/                  # Cross-Module Service Interfaces
-│   ├── __init__.py
-│   └── audit_service.py       # Integration hook for Member 3 audit logging
+├── database/app.db            # Auto-generated SQLite database
+├── frontend/                  # Jinja2 templates (dashboard, document, upload,
+│                              #   share&permissions, login, register, profile,
+│                              #   admin_users, 403, 404)
+├── static/                    # css/, js/, images/
 │
-├── database/                  # SQLite storage directory
-│   └── app.db                 # Auto-generated SQLite database
-│
-├── frontend/                  # Jinja2 HTML Templates (Preserving Stitch AI Design)
-│   ├── dashboard.html         # User overview dashboard
-│   ├── document.html          # My Documents view (Member 2 surface)
-│   ├── share&permissions.html # Document Sharing & Access (Member 2 surface)
-│   ├── upload.html            # Document Upload (Member 2 surface)
-│   ├── login.html             # Unified Sign In / Registration interface
-│   ├── register.html          # Dedicated registration template alias
-│   ├── profile.html           # User Profile & Password Change interface
-│   ├── admin_users.html       # Admin User Management & RBAC panel
-│   ├── 403.html               # Custom HTTP 403 Forbidden error page
-│   └── 404.html               # Custom HTTP 404 Not Found error page
-│
-├── static/                    # Static Assets
-│   ├── css/
-│   ├── js/
-│   └── images/
-│
-└── tests/                     # Automated Test Suite (All 15 Scenarios)
-    ├── __init__.py
-    ├── conftest.py            # Test fixtures and CSRF token extraction utilities
-    ├── test_registration.py   # Registration, duplicate handling, password hashing
-    ├── test_login.py          # Login, inactive accounts, session fixation, logout
-    ├── test_authorization.py  # RBAC enforcement, 403 checks, CSRF rejection
-    └── test_admin.py          # Admin governance, search, last-admin safeguards
+└── tests/                     # 27 automated tests
+    ├── conftest.py
+    ├── test_registration.py
+    ├── test_login.py
+    ├── test_authorization.py
+    ├── test_admin.py
+    └── test_security_course.py
 ```
 
 ---
 
-## 4. Installation & Setup Instructions
+## 4. Installation & Setup
 
-### Step 1: Clone or Navigate to the Workspace
 ```powershell
 cd E:\7-Semester\IS\Final_Project\IS_Project
-```
-
-### Step 2: Create and Activate a Virtual Environment
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-```
-
-### Step 3: Install Required Dependencies
-```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
-
-### Step 4: Configure Environment Variables
-Copy `.env.example` to `.env`:
-```powershell
 Copy-Item .env.example .env
 ```
 
+Edit `.env` and set a strong `SECRET_KEY`. Never commit `.env`.
+
 ---
 
-## 5. Database Initialization & First Administrator Setup
+## 5. Database Initialization & First Administrator
 
-### Automatic Initialization
-The SQLite database and tables are created automatically on the first application launch.
+Tables are created automatically on first launch, or explicitly with:
 
-You can also explicitly initialize the database using the Flask CLI:
 ```powershell
 flask init-db
 ```
 
-### Securely Creating the First Administrator
-Administrative privileges cannot be obtained via public registration. To create the first system administrator safely without hardcoding secrets:
+Admin privileges cannot be obtained through public registration. Create the first administrator with:
+
 ```powershell
 flask create-admin
 ```
-You will be prompted for:
-- **Admin Username**: e.g., `sysadmin`
-- **Admin Email**: e.g., `admin@vault.io`
-- **Admin Full Name**: e.g., `System Administrator`
-- **Admin Password**: (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character)
+
+You will be prompted for username, email, full name, and password (min 8 characters, with uppercase, lowercase, number, and special character).
 
 ---
 
-## 6. How to Run the Application
+## 6. Running the Application
 
-Run the development server using Flask:
 ```powershell
 python app.py
-```
-Or via the Flask CLI:
-```powershell
+# or
 flask run --host=127.0.0.1 --port=5000
 ```
-Open your browser and navigate to:
-```text
-http://127.0.0.1:5000
-```
+
+Open `http://127.0.0.1:5000`.
 
 ---
 
-## 7. How to Run Automated Tests
+## 7. Automated Tests
 
-To execute the entire 16-test automated security suite:
 ```powershell
 pytest -v
 ```
 
-All 15 required scenarios from the specification are implemented and verified:
-- **TEST 1**: Successful registration.
-- **TEST 2**: Duplicate email rejection.
-- **TEST 3**: Duplicate username rejection.
-- **TEST 4**: Invalid password rejection.
-- **TEST 5**: Successful authenticated session establishment.
-- **TEST 6**: Secure password hashing in database (no plaintext).
-- **TEST 7**: Unauthorized dashboard redirect to login.
-- **TEST 8**: Normal user accessing admin pages blocked with HTTP 403 Forbidden.
-- **TEST 9**: Administrator access to `/admin/users` granted (HTTP 200).
-- **TEST 10**: Deactivated account login denied.
-- **TEST 11**: Logout via POST with CSRF and session invalidation.
-- **TEST 12**: Role escalation prevention (public registration forced to `User`).
-- **TEST 13**: Deactivated accounts prevented from authenticating.
-- **TEST 14**: Safeguards protecting against self-deactivation or demoting the last active administrator.
-- **TEST 15**: Rejection of requests with invalid or missing CSRF tokens (HTTP 400).
-- **TEST 16**: Admin user search and status toggle verification.
+**Result: 27 passed.**
+
+| File | What it verifies |
+|---|---|
+| `test_registration.py` | Successful registration, duplicate email, duplicate username, password stored hashed, role-escalation attempt blocked |
+| `test_login.py` | Valid login, wrong password, inactive account denied, logout, account deactivation |
+| `test_authorization.py` | Unauthenticated redirect, normal user gets 403 on admin pages, admin access granted, CSRF rejection |
+| `test_admin.py` | User search and status toggle, last-administrator protection |
+| `test_security_course.py` | Password hashing, AES-256-GCM round trip, SHA-256 tamper detection, SQL injection defense (login and admin search), XSS auto-escaping, CSRF on state changes, document authorization and sharing lifecycle, security headers and anti-caching, 3DES academic demonstration |
+
+<!-- VERIFY: run `pytest --collect-only -q` and confirm this table matches all 27 tests. -->
 
 ---
 
 ## 8. Authentication & Application Security Architecture
 
-1. **Password Hashing**:
-   - Uses Werkzeug password hashing implementing salted `scrypt` or `pbkdf2:sha256`.
-   - Raw plaintext passwords are never saved, transmitted in logs, or exposed in frontend responses.
-2. **Password Policy**:
-   - Enforces minimum 8 characters, at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol.
-3. **Session Hardening & Cookie Protection**:
-   - `SESSION_COOKIE_HTTPONLY = True`: Blocks JavaScript access (`document.cookie`), mitigating cross-site scripting (XSS) session theft.
-   - `SESSION_COOKIE_SAMESITE = 'Lax'`: Protects cookies against cross-site request forgery.
-   - `PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)`: Automatically expires idle sessions.
-4. **Session Fixation Defense**:
-   - On successful authentication in `auth.login`, the previous session is flushed, a fresh session token is minted, and the authenticated identity is attached.
-5. **Rate Limiting**:
-   - Powered by `Flask-Limiter` (`10 requests per minute` on `POST /login`) to protect against dictionary attacks and brute-force credential stuffing.
-6. **CSRF Protection**:
-   - Every state-changing endpoint (`POST /login`, `POST /register`, `POST /logout`, `POST /profile`, `POST /admin/users/...`) is guarded by Flask-WTF CSRF tokens.
-   - Missing or tampered CSRF tokens trigger an audit alert and are rejected with HTTP 400.
-7. **Open Redirect Mitigation**:
-   - The `next` parameter is validated against the application's hostname with `is_safe_url()` before performing any redirection.
+1. **Password hashing**: Werkzeug with per-password salt, using `scrypt` or `pbkdf2:sha256`. Plaintext passwords are never stored or logged.
+2. **Password policy**: Minimum 8 characters with uppercase, lowercase, digit, and special character.
+3. **Cookie hardening**: `HttpOnly` (blocks JavaScript access, limiting XSS session theft), `SameSite=Lax`, 60-minute session lifetime.
+4. **Session fixation defense**: The session is cleared and re-issued on successful login.
+5. **Rate limiting**: 10 requests per minute on `POST /login` (Flask-Limiter) against brute force.
+6. **CSRF protection**: All state-changing endpoints require a Flask-WTF token. Missing or invalid tokens return HTTP 400.
+7. **Open redirect mitigation**: The `next` parameter is validated with `is_safe_url()`.
+8. **SQL injection defense**: All queries go through the SQLAlchemy ORM (parameterized).
+9. **XSS defense**: Jinja2 auto-escaping on all template output.
+10. **Security headers & anti-caching**: Security headers are set on responses, and sensitive pages are not cached, so the Back button cannot reveal pages after logout.
 
 ---
 
-## 9. Role-Based Access Control (RBAC) Architecture
+## 9. Cryptography Used
 
-SecureVault maintains two system-level roles:
-- **`User`**: Standard user permitted to view the dashboard, upload encrypted files, share documents, and manage their profile.
-- **`Admin`**: System administrator permitted to view all accounts, search identities, activate/deactivate users, and promote/demote roles.
+| Purpose | Algorithm | Notes |
+|---|---|---|
+| Password storage | scrypt / PBKDF2-HMAC-SHA256 | Salted, slow key derivation |
+| Document encryption | **AES-256-GCM** | Authenticated encryption: confidentiality plus integrity |
+| Integrity verification | **SHA-256** | Digest used to detect tampering |
+| Session cookies | HMAC-signed (`itsdangerous`) | Tamper-evident cookies |
+| CSRF tokens | Random, signed tokens | Bound to the session |
+| Academic demo | 3DES-CBC | Demonstration only, **not** used to protect documents |
 
-### Authorization Decorators (`authentication/decorators.py`)
-- `@login_required`: Restricts routes to authenticated sessions.
-- `@admin_required`: Restricts endpoints to authenticated users with `role == 'Admin'`. Non-admin users are returned **HTTP 403 Forbidden**.
+<!-- VERIFY: add key generation / key storage details (e.g. os.urandom, per-document keys, key wrapping, RSA) from crypto_service.py. -->
+
+### About the 3DES demonstration
+
+`crypto_service.py` includes a small DES-family example to contrast legacy and modern encryption:
+
+| | 3DES-CBC (demo) | AES-256-GCM (real use) |
+|---|---|---|
+| Block size | 64-bit | 128-bit |
+| Effective key strength | ~112 bits (56 if the key is repeated) | 256 bits |
+| Integrity protection | None | Built in (authentication tag) |
+| Status | Deprecated by NIST | Current standard |
+
+The demo repeats a single key three times, which reduces 3DES to single DES. This is intentional for illustration; it must never be used to protect real data.
+
+---
+
+## 10. Access Control Architecture
+
+### RBAC (Role-Based Access Control)
+
+Access to system functions is decided by the user's **role**:
+
+- **`User`**: dashboard, upload, share own documents, manage profile.
+- **`Admin`**: everything a User can do, plus view/search accounts, activate/deactivate users, change roles.
+
+Enforced by `@login_required` (authenticated sessions) and `@admin_required` (returns **HTTP 403** to non-admins).
+
+### DAC (Discretionary Access Control)
+
+Access to a **document** is decided by its **owner**. The owner can grant or revoke access for other users through the sharing feature. A user may open a document only if they own it or it was shared with them; otherwise the request is denied. This is verified by `test_document_authorization_and_sharing_lifecycle`.
+
+| | RBAC | DAC |
+|---|---|---|
+| Who decides | The system (role assignment by admin) | The resource owner |
+| Applied to | System functions (admin panel) | Individual documents |
+| In SecureVault | `Admin` / `User` roles | Per-document sharing |
+
+### Principle of Least Privilege
+
+- New registrations are always created as `User`; the role cannot be set through the registration form.
+- Normal users cannot reach any `/admin/*` route.
+- Documents are private by default and shared only per document, per user.
+- Deactivated accounts cannot authenticate.
 
 ### Administrative Safeguards
-- **Self-Deactivation Prevention**: An administrator cannot deactivate their own account.
-- **Last Active Admin Protection**: The system prevents deactivating or demoting the last active administrator, ensuring the system cannot become administratively orphaned.
+
+- An administrator cannot deactivate their own account.
+- The last active administrator cannot be deactivated or demoted.
 
 ---
 
-## 10. Integration Guide for Team Members
+## 11. Integration Guide
 
-### For Member 2 (Documents, Upload, Encryption, Permissions):
-Member 2 can immediately access the authenticated user context in any route or template:
+### Documents, Upload, Encryption, Permissions
+
 ```python
-from flask import Blueprint, render_template, request
 from authentication.decorators import login_required
 from flask_login import current_user
-
-document_bp = Blueprint('documents', __name__, url_prefix='/documents')
 
 @document_bp.route('/upload', methods=['POST'])
 @login_required
 def process_upload():
-    # User identity is securely available:
     owner_id = current_user.id
-    owner_username = current_user.username
-    owner_email = current_user.email
-    owner_role = current_user.role
-    # Member 2 encrypts and stores document metadata linked to owner_id
     ...
 ```
 
-### For Member 3 (Audit Logging & Tamper-Evident Logs):
-Member 3 does not need to alter authentication routes. Member 1 has implemented the unified bridge in:
-`services/audit_service.py`
+Always verify ownership or share permission before returning a document.
 
-Whenever authentication, login failures, password rotations, account toggles, or role modifications take place, `record_audit_event()` is called:
+### Audit Logging
+
 ```python
 record_audit_event(user_id, action, details, ip_address)
 ```
-Member 3 can easily bind their cryptographic signing or database table directly inside `record_audit_event()` in `services/audit_service.py`.
+
+Called on logins, login failures, password changes, account toggles, role changes, and CSRF failures. Audit storage and signing are implemented behind `services/audit_service.py`.
+
+---
+
+## 12. Security Concepts Summary
+
+| Concept | How SecureVault applies it |
+|---|---|
+| Authentication | Password login with hashed credentials, rate limiting, session fixation defense |
+| Authorization | Decorators plus document ownership/share checks |
+| RBAC | `Admin` / `User` roles |
+| DAC | Owner-controlled document sharing |
+| Least privilege | Default `User` role, private-by-default documents, admin-only routes |
+| Session security | HttpOnly, SameSite=Lax, 60-minute expiry, anti-caching headers |
+
+---
+
+## 13. Known Limitations
+
+- SQLite and the Flask development server are for development only; production needs a real database, HTTPS, and `SESSION_COOKIE_SECURE=True`.
+- Rate limiting uses in-memory storage by default and resets on restart.
+- The 3DES demo is intentionally insecure and for teaching only.

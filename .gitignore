@@ -1,19 +1,5 @@
 # Python environments
 venv/
-venv/
-.venv/
-
-IS_Project/venv/
-IS_Project/.venv/
-# Environment secrets
-.env
-.env.*
-!*.env.example
-IS_Project/.env
-IS_Project/.env.*
-@'
-# Python environments
-venv/
 .venv/
 IS_Project/venv/
 IS_Project/.venv/
@@ -34,6 +20,7 @@ __pycache__/
 IS_Project/database/*.db
 IS_Project/database/*.db-*
 IS_Project/database/*.log
+IS_Project/database/vault_storage/
 IS_Project/instance/
 IS_Project/uploads/
 
