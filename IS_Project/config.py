@@ -13,6 +13,11 @@ class Config:
         f"sqlite:///{os.path.join(BASE_DIR, 'database', 'app.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Document encryption: master key (KEK) location. Kept OUTSIDE SECRET_KEY.
+    # Set VAULT_MASTER_KEY in the environment for production, or let the app
+    # create database/master.key on first run.
+    VAULT_KEY_FILE = os.environ.get('VAULT_KEY_FILE') or os.path.join(BASE_DIR, 'database', 'master.key')
+
     # Session and Cookie Security
     # Mitigate XSS attacks by preventing client-side scripts from reading session cookies
     SESSION_COOKIE_HTTPONLY = True
@@ -42,6 +47,8 @@ class Config:
 class TestConfig(Config):
     """Configuration for automated test suite."""
     TESTING = True
+    # Fixed, NON-SECRET key used only by the automated tests
+    VAULT_MASTER_KEY = "dGVzdC1vbmx5LW1hc3Rlci1rZXktMzItYnl0ZXMhISE="
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     WTF_CSRF_ENABLED = True
     RATELIMIT_ENABLED = False
