@@ -114,11 +114,13 @@ class AuditLog(db.Model):
     def __repr__(self):
         return f"<AuditLog id={self.id} action='{self.action}' user_id={self.user_id}>"
 
-
 class Document(db.Model):
     """
     SecureVault Document Entity.
-    Stores metadata, integrity checksums, and encrypted storage coordinates.
+
+    The database stores ONLY metadata and the wrapped (encrypted) data key.
+    The encrypted file itself lives in database/vault_storage/<doc_uid>.enc,
+    and the master key that unlocks every wrapped key lives outside both.
     """
     __tablename__ = 'documents'
 
@@ -126,12 +128,17 @@ class Document(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     title = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
-    stored_filename = db.Column(db.String(255), nullable=False, unique=True, index=True)
-    file_path = db.Column(db.String(500), nullable=False)
-    file_size = db.Column(db.Integer, nullable=False)  # in bytes
+    # Random 128-bit id: names the file on disk and is bound into the encryption (AAD)
+    doc_uid = db.Column(db.String(32), nullable=False, unique=True, index=True)
+    stored_filename = db.Column(db.String(255), nullable=False, unique=True, index=True)  # "<doc_uid>.enc"
+    wrapped_key = db.Column(db.LargeBinary, nullable=False)  # per-document key, encrypted by the master key
+    file_size = db.Column(db.Integer, nullable=False)  # plaintext size in bytes
     mime_type = db.Column(db.String(100), nullable=False, default='application/octet-stream')
-    file_hash = db.Column(db.String(64), nullable=False)  # SHA-256 integrity hash
+    file_hash = db.Column(db.String(64), nullable=False)  # SHA-256 of the plaintext
     is_encrypted = db.Column(db.Boolean, nullable=False, default=True)
+    integrity_status = db.Column(db.String(20), nullable=False, default='Verified')  # Verified / FAILED
+    last_verified_at = db.Column(db.DateTime, nullable=True)
+    version = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -167,7 +174,7 @@ class Document(db.Model):
 
 class DocumentShare(db.Model):
     """
-    Access Control Delegation & Permissions for Documents.
+    Access Control Delegation (DAC): the owner grants Viewer or Editor access.
     """
     __tablename__ = 'document_shares'
 
@@ -176,9 +183,9 @@ class DocumentShare(db.Model):
     shared_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     shared_with_email = db.Column(db.String(120), nullable=False, index=True)
     shared_with_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
-    permission_tier = db.Column(db.String(50), nullable=False, default='Viewer')  # 'Viewer', 'Editor', 'Auditor'
+    permission_tier = db.Column(db.String(50), nullable=False, default='Viewer')  # 'Viewer' or 'Editor'
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)  # optional expiry, enforced on every access
 
     def __repr__(self):
         return f"<DocumentShare id={self.id} doc={self.document_id} to='{self.shared_with_email}' tier='{self.permission_tier}'>"
