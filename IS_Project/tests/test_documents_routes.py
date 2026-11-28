@@ -160,3 +160,18 @@ def test_csrf_token_required_on_new_post_routes(app, world):
     i = world["doc"].id
     assert c.post(f"/documents/{i}/verify").status_code == 400
     assert c.post(f"/documents/{i}/replace").status_code == 400
+
+
+def test_share_form_with_expiry_creates_time_limited_share(app, world):
+    """The share form's expiry option is parsed and stored (access is time-limited)."""
+    from authentication.models import DocumentShare
+    c = client_for(app, "owner@vault.io")
+    r = c.post("/documents/share", data={
+        "document_id": world["doc"].id, "recipient_email": "stranger@vault.io",
+        "permission_tier": "Viewer", "expires_in_hours": "24"}, follow_redirects=True)
+    assert r.status_code == 200
+    share = DocumentShare.query.filter_by(shared_with_email="stranger@vault.io").first()
+    assert share is not None and share.expires_at is not None
+    s = client_for(app, "stranger@vault.io")
+    assert s.get(f"/documents/{world['doc'].id}/download").status_code == 200   # active now
+    assert b"expires" in c.get("/documents/permissions").data

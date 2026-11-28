@@ -26,3 +26,7 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Encryption master key and encrypted document store (NEVER commit)
+database/master.key
+database/vault_storage/

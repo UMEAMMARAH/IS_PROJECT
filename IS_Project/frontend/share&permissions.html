@@ -24,7 +24,11 @@
           <span class="material-symbols-outlined text-[18px]">folder</span>
           <span class="font-label-md text-label-md">My Documents</span>
         </a>
-        <a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg transition-colors bg-surface-container-high text-primary font-label-md font-semibold"
+        <a
+            class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+            data-path="shared-with-me" href="{{ url_for('docs.shared_documents') }}"><span
+              class="material-symbols-outlined text-[18px]">group</span><span
+              class="font-label-md text-label-md">Shared With Me</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg transition-colors bg-surface-container-high text-primary font-label-md font-semibold"
            data-path="sharing-and-permissions" href="{{ url_for('main.share_permissions') }}">
           <span class="material-symbols-outlined text-[18px]">lock_person</span>
           <span class="font-label-md text-label-md">Sharing & Permissions</span>
@@ -163,6 +167,17 @@
 </div>
 </div>
 </div>
+<!-- 4. Optional expiry (time-limited access) -->
+<div class="space-y-1.5 max-w-xs">
+<label class="block font-label-md text-label-md text-on-surface font-medium">Access expires</label>
+<select name="expires_in_hours" class="w-full h-[38px] px-3 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:bg-surface-container-low transition-colors cursor-pointer shadow-sm">
+<option value="" selected>Never (until I revoke it)</option>
+<option value="1">After 1 hour</option>
+<option value="24">After 24 hours</option>
+<option value="168">After 7 days</option>
+<option value="720">After 30 days</option>
+</select>
+</div>
 <!-- Action row & meta hint -->
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 gap-space-sm">
 <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
@@ -222,9 +237,9 @@
     <td class="py-3.5 px-4 whitespace-nowrap">
       <div class="flex items-center gap-2">
         <div class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-sm text-label-sm font-semibold">
-          {{ (share.shared_with_user.full_name[:2].upper()) if share.shared_with_user else 'EX' }}
+          {{ (share.recipient.full_name[:2].upper()) if share.recipient else 'EX' }}
         </div>
-        <span class="text-on-surface font-medium">{{ share.shared_with_user.full_name if share.shared_with_user else 'External User' }}</span>
+        <span class="text-on-surface font-medium">{{ share.recipient.full_name if share.recipient else 'External User' }}</span>
       </div>
     </td>
     <td class="py-3.5 px-4 text-on-surface-variant font-body-sm text-body-sm whitespace-nowrap">{{ share.shared_with_email }}</td>
@@ -232,6 +247,7 @@
       <span class="inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm font-medium bg-primary-fixed text-on-primary-fixed">
         {{ share.permission_tier }}
       </span>
+      {% if share.expires_at %}<div class="text-[11px] text-on-surface-variant mt-0.5">expires {{ share.expires_at.strftime('%b %d, %H:%M') }} UTC</div>{% endif %}
     </td>
     <td class="py-3.5 px-4 text-on-surface-variant whitespace-nowrap">{{ share.created_at.strftime('%b %d, %Y') }}</td>
     <td class="py-3.5 px-4 whitespace-nowrap">

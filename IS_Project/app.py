@@ -1,5 +1,6 @@
 import os
 import click
+from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import current_user, login_required
 from flask_wtf.csrf import CSRFError
@@ -138,8 +139,15 @@ def create_app(config_class=Config):
             flash("Please select a document and enter a valid recipient email.", "error")
             return redirect(url_for('main.share_permissions'))
 
+                # Optional time limit on the grant (enforced server-side on every access)
+        expires_at = None
+        hours = request.form.get('expires_in_hours', type=int)
+        if hours in (1, 24, 168, 720):
+            expires_at = datetime.now(timezone.utc) + timedelta(hours=hours)
+
         try:
-            share = share_document_with_user(doc_id, current_user, recipient_email, permission_tier, request.remote_addr)
+            share = share_document_with_user(doc_id, current_user, recipient_email, permission_tier,
+                                             request.remote_addr, expires_at=expires_at)
             flash(f"Document access successfully delegated to {share.shared_with_email} as {share.permission_tier}!", "success")
         except Exception as e:
             flash(f"Sharing failed: {str(e)}", "error")
