@@ -1,0 +1,54 @@
+{% extends "_layout.html" %}
+{% block title %}Shared With Me - SecureVault{% endblock %}
+{% block crumb %}Shared With Me{% endblock %}
+{% block content %}
+<section class="mb-space-lg space-y-1">
+  <div class="flex items-center gap-space-xs text-secondary mb-1">
+    <span class="material-symbols-outlined text-[16px]">group</span>
+    <span class="font-label-sm text-label-sm tracking-widest uppercase">Shared with you</span>
+  </div>
+  <h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Shared Documents</h1>
+  <p class="font-body-md text-body-md text-on-surface-variant">Documents other people have given you access to. The owner can change or revoke this at any time.</p>
+</section>
+
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden mb-space-lg">
+  <div class="overflow-x-auto w-full">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-surface-container-low/60 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+          <th class="py-3 px-space-md">Document</th>
+          <th class="py-3 px-space-md">Shared by</th>
+          <th class="py-3 px-space-md">Your permission</th>
+          <th class="py-3 px-space-md">Expires</th>
+          <th class="py-3 px-space-md text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface">
+        {% for share in shares %}
+        <tr class="hover:bg-surface transition-colors">
+          <td class="py-4 px-space-md">
+            <a class="font-label-md text-label-md font-semibold text-primary hover:underline" href="{{ url_for('docs.document_detail', document_id=share.document.id) }}">{{ share.document.title }}</a>
+            <div class="font-body-sm text-body-sm text-outline">{{ share.document.original_filename }} &bull; {{ share.document.formatted_size }}</div>
+          </td>
+          <td class="py-4 px-space-md">{{ share.sharer.full_name }}</td>
+          <td class="py-4 px-space-md">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-medium">
+              <span class="material-symbols-outlined text-[13px]">shield_person</span>{{ share.permission_tier }}
+            </span>
+          </td>
+          <td class="py-4 px-space-md text-on-surface-variant">{{ share.expires_at.strftime('%b %d, %Y %H:%M') ~ ' UTC' if share.expires_at else 'Never' }}</td>
+          <td class="py-4 px-space-md text-right">
+            <a href="{{ url_for('docs.document_detail', document_id=share.document.id) }}" class="p-1.5 rounded-lg text-primary hover:bg-surface-container inline-block" title="Details">
+              <span class="material-symbols-outlined text-[18px]">info</span></a>
+            <a href="{{ url_for('main.download_document', document_id=share.document.id) }}" class="p-1.5 rounded-lg text-primary hover:bg-surface-container inline-block" title="Download">
+              <span class="material-symbols-outlined text-[18px]">download</span></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="py-16 text-center text-on-surface-variant">Nothing has been shared with you yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

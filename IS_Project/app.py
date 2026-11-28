@@ -9,6 +9,7 @@ from extensions import db, login_manager, csrf, limiter
 from authentication.models import User
 from authentication.routes import auth_bp
 from admin.routes import admin_bp
+from documents.routes import docs_bp
 from services.audit_service import record_audit_event
 
 
@@ -33,6 +34,7 @@ def create_app(config_class=Config):
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(docs_bp)
 
     # -------------------------------------------------------------
     # Main Blueprint: Core dashboard and real document management
@@ -42,6 +44,7 @@ def create_app(config_class=Config):
     from authentication.models import Document, DocumentShare
     from services.document_service import (
         get_user_dashboard_metrics,
+        get_shared_with_user,
         save_uploaded_document,
         retrieve_document_bytes,
         delete_user_document,
@@ -70,10 +73,7 @@ def create_app(config_class=Config):
     def documents():
         """My Documents view: displays actual stored documents owned or shared."""
         user_docs = Document.query.filter_by(user_id=current_user.id).order_by(Document.created_at.desc()).all()
-        shared_with_user = DocumentShare.query.filter(
-            (DocumentShare.shared_with_email == current_user.email.lower()) |
-            (DocumentShare.shared_with_user_id == current_user.id)
-        ).all()
+        shared_with_user = get_shared_with_user(current_user)  # active shares only
         metrics = get_user_dashboard_metrics(current_user.id)
         return render_template('document.html', user=current_user, documents=user_docs, shared_docs=shared_with_user, metrics=metrics)
 

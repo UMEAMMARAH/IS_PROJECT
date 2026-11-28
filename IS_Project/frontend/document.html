@@ -277,13 +277,13 @@
                       <td class="py-4 px-space-md">
                         <div class="flex items-center gap-space-sm min-w-0">
                           <div
-                            class="w-9 h-9 rounded-lg {% if doc.file_extension == 'pdf' %}bg-error-container/60 text-error{% elif doc.file_extension in ['xlsx','xls','csv'] %}bg-secondary-container/30 text-secondary{% elif doc.file_extension in ['png','jpg','jpeg'] %}bg-surface-container-high text-primary{% else %}bg-primary-container text-on-primary{% endif %} flex items-center justify-center shrink-0">
+                            class="w-9 h-9 rounded-lg {% if doc.file_extension|lower == 'pdf' %}bg-error-container/60 text-error{% elif doc.file_extension|lower in ['xlsx','xls','csv'] %}bg-secondary-container/30 text-secondary{% elif doc.file_extension|lower in ['png','jpg','jpeg'] %}bg-surface-container-high text-primary{% else %}bg-primary-container text-on-primary{% endif %} flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-[20px]">
-                              {% if doc.file_extension == 'pdf' %}picture_as_pdf{% elif doc.file_extension in ['xlsx','xls','csv'] %}table_chart{% elif doc.file_extension in ['png','jpg','jpeg'] %}image{% else %}description{% endif %}
+                              {% if doc.file_extension|lower == 'pdf' %}picture_as_pdf{% elif doc.file_extension|lower in ['xlsx','xls','csv'] %}table_chart{% elif doc.file_extension|lower in ['png','jpg','jpeg'] %}image{% else %}description{% endif %}
                             </span>
                           </div>
                           <div class="flex flex-col min-w-0">
-                            <span class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors">{{ doc.title }}</span>
+                            <a href="{{ url_for('docs.document_detail', document_id=doc.id) }}" class="font-label-md text-label-md text-on-surface font-semibold truncate group-hover:text-secondary transition-colors hover:underline">{{ doc.title }}</a>
                             <span class="font-body-sm text-body-sm text-outline truncate">{{ doc.original_filename }} • AES-256-GCM</span>
                           </div>
                         </div>
@@ -331,8 +331,8 @@
                             <span class="material-symbols-outlined text-[20px]">share</span>
                           </div>
                           <div class="flex flex-col min-w-0">
-                            <span class="font-label-md text-label-md text-on-surface font-semibold truncate">{{ share.document.title }}</span>
-                            <span class="font-body-sm text-body-sm text-secondary truncate">Shared by {{ share.shared_by.full_name }}</span>
+                            <a href="{{ url_for('docs.document_detail', document_id=share.document.id) }}" class="font-label-md text-label-md text-on-surface font-semibold truncate hover:underline">{{ share.document.title }}</a>
+                            <span class="font-body-sm text-body-sm text-secondary truncate">Shared by {{ share.sharer.full_name }}</span>
                           </div>
                         </div>
                       </td>
